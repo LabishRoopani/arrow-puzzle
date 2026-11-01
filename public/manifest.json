@@ -1,0 +1,19 @@
+{
+  "name": "Arrow Puzzle",
+  "short_name": "Arrow Puzzle",
+  "description": "High-performance directional logic puzzle game with snake and polyline arrow paths",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
+
