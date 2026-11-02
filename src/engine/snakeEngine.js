@@ -1,11 +1,11 @@
 /**
- * snakeEngine.js — Pure Rule-Based Puzzle Engine & Level Generator
+ * snakeEngine.js — Pure Rule-Based Puzzle Engine & Deterministic Level Generator
  * 
- * Features:
- * 1. Deterministic raycasting line-of-sight collision checks.
- * 2. Guaranteed non-intersecting snake arrow paths on grid.
- * 3. Reverse topological level generation (mathematically guaranteed solvable without AI).
- * 4. Rule-based cascade hint calculator.
+ * Guarantees:
+ * 1. ZERO overlapping or intersecting arrows (each snake path is strictly disjoint).
+ * 2. Deterministic seedable generation for Campaign Levels 1–20 (replayable & consistent).
+ * 3. 100% mathematically solvable using reverse clearance checks.
+ * 4. Rule-based cascade hint calculator (identifies unblocked arrows and picks best downstream unlocker).
  */
 
 export const DIRECTIONS = {
@@ -23,6 +23,19 @@ export const DIR_DELTA = {
 };
 
 /**
+ * Simple Mulberry32 seeded PRNG for consistent campaign levels
+ */
+function createPRNG(seed) {
+  let s = Math.abs(seed | 0) + 1;
+  return function() {
+    s = (s + 0x6D2B79F5) | 0;
+    let t = Math.imul(s ^ (s >>> 15), 1 | s);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/**
  * Check if ray from arrowA's head collides with any segment of arrowB
  */
 export function checkRaycastCollision(arrowA, arrowB, gridWidth = 12, gridHeight = 16) {
@@ -32,21 +45,18 @@ export function checkRaycastCollision(arrowA, arrowB, gridWidth = 12, gridHeight
   let nearestHit = null;
   let minDistance = Infinity;
 
-  // Check against every segment of arrowB
   for (let i = 0; i < arrowB.points.length - 1; i++) {
     const p1 = arrowB.points[i];
     const p2 = arrowB.points[i + 1];
 
     if (dir === 'RIGHT') {
       if (p1.y === p2.y && p1.y === head.y) {
-        // Collinear horizontal
         const segMin = Math.min(p1.x, p2.x);
         if (segMin > head.x && (segMin - head.x) < minDistance) {
           minDistance = segMin - head.x;
           nearestHit = { x: segMin, y: head.y };
         }
       } else if (p1.x === p2.x) {
-        // Vertical cross
         const crossX = p1.x;
         const minY = Math.min(p1.y, p2.y);
         const maxY = Math.max(p1.y, p2.y);
@@ -155,8 +165,8 @@ export function getFreeArrows(allArrows, gridWidth, gridHeight) {
 }
 
 /**
- * Rule-Based Hint System
- * Suggests the best unblocked arrow by picking the one that unlocks the most downstream arrows.
+ * Rule-Based Hint System (No AI Solver)
+ * Finds the optimal unblocked arrow that unlocks the most downstream arrows.
  */
 export function getRuleBasedHint(allArrows, gridWidth, gridHeight) {
   const freeArrows = getFreeArrows(allArrows, gridWidth, gridHeight);
@@ -197,63 +207,68 @@ function getPointsOnSegment(p1, p2) {
 }
 
 /**
- * Rule-Based Level Generator (Reverse Construction)
- * Mathematically guaranteed to be 100% solvable without external AI solver.
+ * Deterministic Level Generator
+ * STRICT: Ensures no two arrows ever cross or share any points.
+ * @param {string} tier - 'Easy' | 'Medium' | 'Hard' | 'Expert'
+ * @param {number|null} seed - Deterministic seed for campaign levels
  */
-export function generateSnakeLevel(tier = 'Easy') {
+export function generateSnakeLevel(tier = 'Easy', seed = null) {
+  const rand = seed !== null ? createPRNG(seed) : Math.random;
+
   let width = 10;
   let height = 14;
-  let targetArrows = 8;
+  let targetArrows = 6;
 
   if (tier === 'Medium') {
     width = 11;
     height = 15;
-    targetArrows = 14;
+    targetArrows = 12;
   } else if (tier === 'Hard') {
     width = 12;
     height = 16;
-    targetArrows = 22;
+    targetArrows = 18;
   } else if (tier === 'Extreme' || tier === 'Expert') {
-    width = 13;
-    height = 17;
-    targetArrows = 30;
+    width = 12;
+    height = 16;
+    targetArrows = 24;
   }
 
-  for (let attempt = 0; attempt < 30; attempt++) {
+  for (let attempt = 0; attempt < 35; attempt++) {
     const arrows = [];
     const occupiedPoints = new Set();
     let arrowId = 1;
     let tries = 0;
 
-    while (arrows.length < targetArrows && tries < 700) {
+    while (arrows.length < targetArrows && tries < 800) {
       tries++;
 
-      const startX = Math.floor(Math.random() * (width - 4)) + 2;
-      const startY = Math.floor(Math.random() * (height - 4)) + 2;
+      const startX = Math.floor(rand() * (width - 4)) + 2;
+      const startY = Math.floor(rand() * (height - 4)) + 2;
 
       if (occupiedPoints.has(`${startX},${startY}`)) continue;
 
-      const shape = Math.random() < 0.4 ? 'straight' : Math.random() < 0.8 ? 'L' : 'U';
+      const rShape = rand();
+      const shape = rShape < 0.45 ? 'straight' : rShape < 0.85 ? 'L' : 'U';
       let points = [];
       let finalDir = 'RIGHT';
 
       if (shape === 'straight') {
         const dirs = ['UP', 'DOWN', 'LEFT', 'RIGHT'];
-        finalDir = dirs[Math.floor(Math.random() * dirs.length)];
-        const len = Math.floor(Math.random() * 3) + 2;
+        finalDir = dirs[Math.floor(rand() * dirs.length)];
+        const len = Math.floor(rand() * 2) + 2;
         const endX = startX + DIR_DELTA[finalDir].dx * len;
         const endY = startY + DIR_DELTA[finalDir].dy * len;
 
         if (endX < 1 || endX >= width - 1 || endY < 1 || endY >= height - 1) continue;
         points = [{ x: startX, y: startY }, { x: endX, y: endY }];
       } else if (shape === 'L') {
-        const len1 = Math.floor(Math.random() * 2) + 2;
-        const len2 = Math.floor(Math.random() * 2) + 2;
-        const firstHoriz = Math.random() > 0.5;
+        const len1 = Math.floor(rand() * 2) + 2;
+        const len2 = Math.floor(rand() * 2) + 2;
+        const firstHoriz = rand() > 0.5;
 
         if (firstHoriz) {
-          const dirX = Math.random() > 0.5 ? 1 : -1;
-          const dirY = Math.random() > 0.5 ? 1 : -1;
+          const dirX = rand() > 0.5 ? 1 : -1;
+          const dirY = rand() > 0.5 ? 1 : -1;
           const cornerX = startX + dirX * len1;
           const endY = startY + dirY * len2;
 
@@ -265,8 +280,8 @@ export function generateSnakeLevel(tier = 'Easy') {
             { x: cornerX, y: endY },
           ];
         } else {
-          const dirY = Math.random() > 0.5 ? 1 : -1;
-          const dirX = Math.random() > 0.5 ? 1 : -1;
+          const dirY = rand() > 0.5 ? 1 : -1;
+          const dirX = rand() > 0.5 ? 1 : -1;
           const cornerY = startY + dirY * len1;
           const endX = startX + dirX * len2;
 
@@ -282,7 +297,7 @@ export function generateSnakeLevel(tier = 'Easy') {
         const len1 = 2;
         const len2 = 2;
         const len3 = 2;
-        const goRight = Math.random() > 0.5;
+        const goRight = rand() > 0.5;
         const corner1X = startX + (goRight ? len1 : -len1);
         const corner2Y = startY + len2;
         const endX = corner1X - (goRight ? len3 : -len3);
@@ -334,7 +349,7 @@ export function generateSnakeLevel(tier = 'Easy') {
       }
     }
 
-    if (arrows.length >= Math.min(targetArrows, 6)) {
+    if (arrows.length >= Math.min(targetArrows, 5)) {
       return {
         width,
         height,

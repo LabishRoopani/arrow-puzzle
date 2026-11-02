@@ -1,90 +1,121 @@
 /**
- * WinModal.jsx — Member 1: UI Component
- * Victory overlay with star rating, stats, confetti, and Next Level CTA.
- *
- * Props:
- *  - isOpen: boolean
- *  - moveCount: number
- *  - elapsedSeconds: number
- *  - levelName: string
- *  - onNextLevel: () => void
- *  - onReplay: () => void
- *  - onClose: () => void
+ * WinModal.jsx — Premium Victory Celebration Modal
+ * Displays:
+ * - Animated glowing Stars based on remaining hearts
+ * - Completion Time & Moves
+ * - "New Record!" badge if fastest time
+ * - XP Gain Counter (+XP)
+ * - Next Level & Replay CTA buttons
  */
 
-import { Trophy, Star, RotateCcw, ChevronRight } from 'lucide-react';
+import { Trophy, Star, RotateCcw, ChevronRight, Sparkles, Clock, Zap } from 'lucide-react';
 
-function calcStars(moveCount) {
-  if (moveCount <= 5)  return 3;
-  if (moveCount <= 10) return 2;
-  return 1;
-}
-
-export default function WinModal({ isOpen, moveCount = 0, elapsedSeconds = 0, levelName = '', onNextLevel, onReplay, onClose }) {
+export default function WinModal({
+  isOpen,
+  moveCount = 0,
+  elapsedSeconds = 0,
+  levelName = '',
+  stars = 3,
+  isNewBestTime = false,
+  xpEarned = 150,
+  onNextLevel,
+  onReplay,
+  onClose,
+}) {
   if (!isOpen) return null;
-
-  const stars = calcStars(moveCount);
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md select-none p-4 animate-fade-in"
       onClick={onClose}
     >
       <div
-        className="animate-pop-in bg-slate-800 border border-slate-600 rounded-3xl p-8 mx-4 max-w-sm w-full text-center shadow-2xl"
+        className="animate-pop-in bg-[#111631] border border-white/10 rounded-3xl p-6 mx-auto max-w-sm w-full text-center shadow-2xl relative overflow-hidden"
         onClick={e => e.stopPropagation()}
       >
+        {/* Ambient Top Glow */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-24 bg-amber-500/10 rounded-full blur-2xl pointer-events-none" />
+
         {/* Trophy Icon */}
-        <div className="flex justify-center mb-3">
-          <Trophy size={52} className="text-yellow-400 drop-shadow-lg" />
+        <div className="flex justify-center mb-2">
+          <div className="w-16 h-16 rounded-3xl bg-amber-500/15 border border-amber-400/30 flex items-center justify-center shadow-xl shadow-amber-500/10">
+            <Trophy size={36} className="text-amber-400 drop-shadow-md animate-bounce" style={{ animationDuration: '2s' }} />
+          </div>
         </div>
 
-        <h2 className="text-2xl font-bold text-slate-100 mb-1">Level Complete!</h2>
-        <p className="text-slate-400 text-sm mb-4">{levelName}</p>
+        <h2 className="text-2xl font-black text-white mb-0.5 tracking-tight">
+          Level Cleared!
+        </h2>
+        <p className="text-slate-400 text-xs mb-4 font-semibold">{levelName}</p>
 
-        {/* Stars */}
-        <div className="flex justify-center gap-2 mb-6">
-          {[1, 2, 3].map(s => (
-            <Star
-              key={s}
-              size={32}
-              className={s <= stars ? 'text-yellow-400 fill-yellow-400' : 'text-slate-600'}
-            />
-          ))}
+        {/* 3 Animated Stars */}
+        <div className="flex justify-center gap-3 mb-5">
+          {[1, 2, 3].map(s => {
+            const filled = s <= stars;
+            return (
+              <div key={s} className="relative">
+                <Star
+                  size={40}
+                  className={`transition-all duration-500 ${
+                    filled
+                      ? 'text-amber-400 fill-amber-400 drop-shadow-[0_0_12px_rgba(245,158,11,0.6)] animate-pop-in'
+                      : 'text-slate-700 fill-slate-800'
+                  }`}
+                  style={{ animationDelay: `${s * 150}ms` }}
+                />
+              </div>
+            );
+          })}
         </div>
 
-        {/* Stats */}
-        <div className="flex justify-around mb-6 bg-slate-700/50 rounded-2xl p-3">
+        {/* Stats Grid */}
+        <div className="grid grid-cols-3 gap-2 mb-4 bg-white/5 border border-white/[0.08] rounded-2xl p-3">
           <div>
-            <p className="text-slate-400 text-xs">Moves</p>
-            <p className="text-indigo-300 font-bold text-xl">{moveCount}</p>
+            <span className="text-[10px] text-slate-400 font-bold uppercase block">Moves</span>
+            <p className="text-base font-black text-cyan-300">{moveCount}</p>
           </div>
           <div>
-            <p className="text-slate-400 text-xs">Time</p>
-            <p className="text-indigo-300 font-bold text-xl">
+            <span className="text-[10px] text-slate-400 font-bold uppercase block">Time</span>
+            <p className="text-base font-black text-cyan-300">
               {String(Math.floor(elapsedSeconds / 60)).padStart(2, '0')}:
               {String(elapsedSeconds % 60).padStart(2, '0')}
             </p>
           </div>
           <div>
-            <p className="text-slate-400 text-xs">Stars</p>
-            <p className="text-yellow-400 font-bold text-xl">{stars} / 3</p>
+            <span className="text-[10px] text-slate-400 font-bold uppercase block">Stars</span>
+            <p className="text-base font-black text-amber-400">{stars} / 3</p>
           </div>
         </div>
 
-        {/* Actions */}
-        <div className="flex gap-3">
+        {/* New Record Banner if applicable */}
+        {isNewBestTime && (
+          <div className="mb-4 py-1.5 px-3 rounded-xl bg-amber-500/15 border border-amber-400/30 text-amber-300 text-xs font-black flex items-center justify-center gap-1.5 animate-pulse">
+            <Sparkles size={13} />
+            <span>New Best Time Record!</span>
+          </div>
+        )}
+
+        {/* XP Gain Pill */}
+        <div className="mb-5 inline-flex items-center gap-1.5 bg-gradient-to-r from-cyan-500/20 to-purple-500/20 border border-cyan-400/30 px-3.5 py-1 rounded-full text-xs font-black text-cyan-300">
+          <Zap size={13} className="text-amber-400 fill-amber-400" />
+          <span>+{xpEarned} XP Earned</span>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex gap-2.5">
           <button
             onClick={onReplay}
-            className="flex-1 flex items-center justify-center gap-1 py-3 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-200 font-medium transition-colors"
+            className="flex-1 flex items-center justify-center gap-1.5 py-3.5 rounded-2xl bg-white/[0.06] border border-white/10 hover:bg-white/10 text-slate-200 font-bold text-xs transition cursor-pointer active:scale-95"
           >
-            <RotateCcw size={16} /> Replay
+            <RotateCcw size={15} />
+            <span>Replay</span>
           </button>
           <button
             onClick={onNextLevel}
-            className="flex-1 flex items-center justify-center gap-1 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium transition-colors"
+            className="flex-1 flex items-center justify-center gap-1.5 py-3.5 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 text-white font-extrabold text-xs shadow-xl shadow-cyan-500/25 transition cursor-pointer active:scale-95 border border-cyan-400/30"
           >
-            Next Level <ChevronRight size={16} />
+            <span>Next Level</span>
+            <ChevronRight size={16} />
           </button>
         </div>
       </div>

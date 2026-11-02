@@ -1,21 +1,12 @@
 /**
- * PauseModal.jsx — In-Game Pause Menu
- * Lets player pause game, view level objectives, resume, restart, or exit to dashboard.
+ * PauseModal.jsx — Dark Cosmic Pause Menu
  */
 
 import { Play, RotateCcw, Home, Volume2, VolumeX } from 'lucide-react';
 
 export default function PauseModal({
-  isOpen,
-  levelNumber,
-  tier,
-  moveCount,
-  elapsedSeconds = 0,
-  onResume,
-  onRestart,
-  onExitToHome,
-  soundEnabled,
-  onToggleSound,
+  isOpen, levelNumber, tier, moveCount, elapsedSeconds = 0,
+  onResume, onRestart, onExitToHome, soundEnabled, onToggleSound,
 }) {
   if (!isOpen) return null;
 
@@ -23,68 +14,58 @@ export default function PauseModal({
   const secs = elapsedSeconds % 60;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in select-none">
-      <div className="bg-white rounded-3xl p-6 max-w-xs w-full shadow-2xl flex flex-col items-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-fade-in select-none">
+      <div className="bg-[#111631] border border-white/10 rounded-3xl p-6 max-w-xs w-full shadow-2xl flex flex-col items-center animate-pop-in">
         
-        <h3 className="text-2xl font-black text-slate-800 mb-1">Game Paused</h3>
-        <p className="text-slate-400 text-xs font-semibold mb-4">Level {levelNumber} • {tier}</p>
+        <h3 className="text-2xl font-black text-white mb-1">Game Paused</h3>
+        <p className="text-slate-500 text-xs font-semibold mb-4">Level {levelNumber} • {tier}</p>
 
-        {/* Stats Pill */}
-        <div className="flex items-center justify-around w-full bg-slate-50 border border-slate-100 p-3 rounded-2xl mb-6 text-center">
+        {/* Stats */}
+        <div className="flex items-center justify-around w-full bg-white/5 border border-white/[0.08] p-3.5 rounded-2xl mb-6 text-center">
           <div>
-            <span className="text-[10px] text-slate-400 font-bold uppercase">Moves</span>
-            <p className="text-lg font-black text-slate-700">{moveCount}</p>
+            <span className="text-[10px] text-slate-500 font-bold uppercase">Moves</span>
+            <p className="text-lg font-black text-cyan-300">{moveCount}</p>
           </div>
-          <div className="w-px h-8 bg-slate-200" />
+          <div className="w-px h-8 bg-white/10" />
           <div>
-            <span className="text-[10px] text-slate-400 font-bold uppercase">Time</span>
-            <p className="text-lg font-black text-slate-700">
+            <span className="text-[10px] text-slate-500 font-bold uppercase">Time</span>
+            <p className="text-lg font-black text-cyan-300">
               {String(mins).padStart(2, '0')}:{String(secs).padStart(2, '0')}
             </p>
           </div>
         </div>
 
-        {/* Menu Buttons */}
         <div className="w-full flex flex-col gap-2.5">
-          {/* Resume */}
           <button
             onClick={onResume}
-            className="w-full py-3.5 rounded-full bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-extrabold text-sm flex items-center justify-center gap-2 shadow-lg shadow-blue-500/25 transition cursor-pointer"
+            className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 text-white font-extrabold text-sm flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/25 transition cursor-pointer border border-cyan-400/20"
           >
-            <Play size={16} fill="currentColor" />
-            Resume
+            <Play size={16} fill="currentColor" /> Resume
           </button>
 
-          {/* Restart */}
           <button
             onClick={onRestart}
-            className="w-full py-3 rounded-full bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-700 font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer"
+            className="w-full py-3 rounded-2xl bg-white/[0.06] border border-white/10 text-slate-300 font-bold text-sm flex items-center justify-center gap-2 hover:bg-white/10 transition cursor-pointer"
           >
-            <RotateCcw size={15} />
-            Restart Level
+            <RotateCcw size={15} /> Restart Level
           </button>
 
-          {/* Sound Toggle */}
           <button
             onClick={onToggleSound}
-            className="w-full py-2.5 rounded-full bg-slate-50 hover:bg-slate-100 text-slate-600 font-bold text-xs flex items-center justify-center gap-2 border border-slate-200/80 transition cursor-pointer"
+            className="w-full py-3 rounded-2xl bg-white/5 border border-white/[0.08] text-slate-400 font-bold text-sm flex items-center justify-center gap-2 hover:bg-white/[0.08] transition cursor-pointer"
           >
-            {soundEnabled ? <Volume2 size={16} className="text-emerald-600" /> : <VolumeX size={16} className="text-slate-400" />}
-            Sound: {soundEnabled ? 'Enabled' : 'Muted'}
+            {soundEnabled ? <Volume2 size={15} className="text-emerald-400" /> : <VolumeX size={15} />}
+            Sound {soundEnabled ? 'On' : 'Off'}
           </button>
 
-          {/* Main Menu */}
           <button
             onClick={onExitToHome}
-            className="w-full py-2.5 rounded-full text-slate-400 hover:text-slate-600 font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer mt-1"
+            className="w-full py-3 rounded-2xl bg-rose-500/[0.08] border border-rose-500/20 text-rose-400 font-bold text-sm flex items-center justify-center gap-2 hover:bg-rose-500/[0.12] transition cursor-pointer"
           >
-            <Home size={15} />
-            Quit to Dashboard
+            <Home size={15} /> Quit to Dashboard
           </button>
         </div>
-
       </div>
     </div>
   );
 }
-
